@@ -4,6 +4,7 @@ pragma solidity ^0.8.0;
 import "@chainlink/contracts/src/v0.8/interfaces/AggregatorV3Interface.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 
+import "./FundETHUSD.sol";
 import "./PetAdoptionAbstract.sol";
 
 
@@ -11,8 +12,9 @@ import "./PetAdoptionAbstract.sol";
  * @title DogAdoption smart contract related to dog shelter.
  * @notice The PetAdoption abstract contract gives you the opportunity to join the adoption list of a dog shelter and
  *         to gain the privilige adopting and adding dogs.
+ *         FundETHUSD contract is used in order to inherent useful funding functions.
  */
-contract DogAdoption is PetAdoption, Ownable {
+contract DogAdoption is PetAdoptionAbstract, FundETHUSD, Ownable {
     
     // Global variables
     address payable ownerOfDogShelter;
@@ -24,7 +26,7 @@ contract DogAdoption is PetAdoption, Ownable {
     mapping(uint256 => bool) public hasBeenAdopted;
     mapping(address => Adopter) private mapAdopters;
     mapping(address => bool) public isAdopter;
-    address[] public benefactors;
+    address[] public greatBenefactors;
     
     
     // Events
@@ -47,6 +49,7 @@ contract DogAdoption is PetAdoption, Ownable {
         address _priceFeedAddress
     )
     public
+    FundETHUSD(_priceFeedAddress)
     {
         ownerOfDogShelter = payable(msg.sender);
         statusOfAdoption = StatusAdoption.TERMINATED;
@@ -54,8 +57,10 @@ contract DogAdoption is PetAdoption, Ownable {
     }
     
 
+    // The contract can receive payments
     receive() external payable {}
     
+
     /**
      * @notice Adoption campaign should be in progress
      */
@@ -193,27 +198,23 @@ contract DogAdoption is PetAdoption, Ownable {
 
     
     /**
-     * @param _usdAmount The amount in the usd
+     * @notice Donate to this contract
      * @dev onlyAdopter can call this function
      * @dev Emits Donation event
      */
-    function sendDonation(uint256 _usdAmount)
+    function sendDonation()
         public
         payable
         onlyAdopter
         onlySend
         {
-            (, int256 price, , , ) = ethUsdPriceFeed.latestRoundData();
-            uint256 adjustedPrice = uint256(price) * 10000000000;
-            uint256 donationPrice = (_usdAmount * 10**18) / adjustedPrice;
-            uint256 donationPriceToWei = donationPrice * 1000000000000000000;
+            uint256 ethToUsd = getConversionRate(msg.value);
 
-            (bool sent, bytes memory data) = ownerOfDogShelter.call{value: donationPriceToWei}("");
-            require(sent, "Donation failed, try again! ;)");
+            if (ethToUsd > 100){
+                greatBenefactors.push(msg.sender);
+            }
 
-            benefactors.push(msg.sender);
-
-            emit Donation(msg.sender, _usdAmount);
+            emit Donation(msg.sender, ethToUsd);
         }
     
     
@@ -288,6 +289,19 @@ contract DogAdoption is PetAdoption, Ownable {
         validAddress(_newOwner) 
         {
             ownerOfDogShelter = _newOwner;
+        }
+    
+    
+    /**
+     * @notice Withdraw the balance of this contract
+     * @dev Only owner can call this function
+     */
+    function withdraw()
+        public
+        payable
+        onlyOwner
+        {
+            ownerOfDogShelter.transfer(address(this).balance);
         }
 
 }

@@ -3,7 +3,7 @@ pragma solidity ^0.8.0;
 
 import "./StructsEnumsAdoption.sol";
 
-abstract contract PetAdoption {
+abstract contract PetAdoptionAbstract {
     
     function addAdopter(
         address _addrAdopter,
