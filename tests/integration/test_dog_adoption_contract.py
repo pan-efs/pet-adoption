@@ -60,3 +60,12 @@ def test_dog_adoption(deploy):
     # Assert that the dog with id=5 has been adopted, while the dog with id=6 has not
     assert DogAdoption[-1].hasBeenAdopted(5) == True
     assert DogAdoption[-1].hasBeenAdopted(6) == False
+    
+    # Donation
+    #DogAdoption[-1].sendDonation({"from": account, "value": 0.05, "gas_limit": 5000000000000000000})
+    
+    # Assert that the balance is > 0
+    #assert DogAdoption[-1].balance() > 0
+    
+    # Get the great benefactor
+    #assert DogAdoption[-1].greatBenefactors(0) == 0

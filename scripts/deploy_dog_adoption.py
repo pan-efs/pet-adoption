@@ -126,15 +126,15 @@ def adopt_pet(id: int):
     return id
 
 
-def send_donation(usd_amount: int):
+def send_donation(value: float):
     account = deploying.get_account()
     
     dog_adoption = DogAdoption[-1]
     
-    donation = dog_adoption.sendDonation(usd_amount, {"from": account})
+    donation = dog_adoption.sendDonation({"from": account, "value": value})
     donation.wait(1)
     
-    logging.info(f"{usd_amount} dollars just donated!:)")
+    logging.info(f"{value} ETH just donated!:)")
 
 
 def get_balance():
