@@ -1,8 +1,8 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
-import "@chainlink/contracts/src/v0.8/interfaces/AggregatorV3Interface.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
+import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
 
 import "./FundETHUSD.sol";
 import "./PetAdoptionAbstract.sol";
@@ -14,13 +14,12 @@ import "./PetAdoptionAbstract.sol";
  *         to gain the privilige adopting and adding dogs.
  *         FundETHUSD contract is used in order to inherent useful funding functions.
  */
-contract DogAdoption is PetAdoptionAbstract, FundETHUSD, Ownable {
+contract DogAdoption is PetAdoptionAbstract, FundETHUSD, Ownable, ReentrancyGuard {
     
     // Global variables
     address payable ownerOfDogShelter;
     StatusAdoption public statusOfAdoption;
     bool public lockedSendDonation;
-    AggregatorV3Interface internal ethUsdPriceFeed;
 
     mapping(uint256 => Pet) public dogs;
     mapping(uint256 => bool) public hasBeenAdopted;
@@ -53,7 +52,6 @@ contract DogAdoption is PetAdoptionAbstract, FundETHUSD, Ownable {
     {
         ownerOfDogShelter = payable(msg.sender);
         statusOfAdoption = StatusAdoption.TERMINATED;
-        ethUsdPriceFeed = AggregatorV3Interface(_priceFeedAddress);
     }
     
 
@@ -185,19 +183,6 @@ contract DogAdoption is PetAdoptionAbstract, FundETHUSD, Ownable {
     
     
     /**
-     * @notice Prevents sendDonation to be called while it is executing.
-     * @dev Reentrancy guard prevention
-     */
-    modifier onlySend()
-        {
-            require(!lockedSendDonation, "Can't donate now!");
-            lockedSendDonation = true;
-            _;
-            lockedSendDonation = false;
-        }
-
-    
-    /**
      * @notice Donate to this contract
      * @dev onlyAdopter can call this function
      * @dev Emits Donation event
@@ -206,7 +191,7 @@ contract DogAdoption is PetAdoptionAbstract, FundETHUSD, Ownable {
         public
         payable
         onlyAdopter
-        onlySend
+        nonReentrant
         {
             uint256 ethToUsd = getConversionRate(msg.value);
 
@@ -215,18 +200,6 @@ contract DogAdoption is PetAdoptionAbstract, FundETHUSD, Ownable {
             }
 
             emit Donation(msg.sender, ethToUsd);
-        }
-    
-    
-    /**
-     * @dev Return the current balance of this contract
-     */
-    function getBalance()
-        public 
-        view 
-        returns(uint) 
-        {
-            return address(this).balance;
         }
     
     
@@ -300,6 +273,7 @@ contract DogAdoption is PetAdoptionAbstract, FundETHUSD, Ownable {
         public
         payable
         onlyOwner
+        nonReentrant
         {
             ownerOfDogShelter.transfer(address(this).balance);
         }

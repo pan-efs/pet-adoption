@@ -5,9 +5,9 @@ from brownie import (
     DogAdoption,
     config,
     network,
+    Wei,
     MockV3Aggregator
 )
-from web3 import Web3
 
 from scripts.deploy_contracts_cls import Deploying
 
@@ -131,20 +131,21 @@ def send_donation(value: float):
     
     dog_adoption = DogAdoption[-1]
     
-    donation = dog_adoption.sendDonation({"from": account, "value": value})
+    value_toWei = Wei(f"{value} ether")
+    donation = dog_adoption.sendDonation({
+                                "from": account, 
+                                "value": value_toWei, 
+                            })
     donation.wait(1)
     
     logging.info(f"{value} ETH just donated!:)")
 
 
 def get_balance():
-    account = deploying.get_account()
-    
     dog_adoption = DogAdoption[-1]
     
-    balance = dog_adoption.getBalance({"from": account})
-    balance_to_wei = Web3.toWei(balance, 'ether')
+    balance = dog_adoption.balance()
     
-    logging.info(f"The current balance of the shelter is {balance_to_wei} Wei.")
+    logging.info(f"The current balance of the shelter is {balance} ETH.")
     
     return balance
