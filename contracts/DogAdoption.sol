@@ -17,15 +17,14 @@ import "./PetAdoptionAbstract.sol";
 contract DogAdoption is PetAdoptionAbstract, FundETHUSD, Ownable, ReentrancyGuard {
     
     // Global variables
-    address payable ownerOfDogShelter;
     StatusAdoption public statusOfAdoption;
-    bool public lockedSendDonation;
 
     mapping(uint256 => Pet) public dogs;
     mapping(uint256 => bool) public hasBeenAdopted;
     mapping(address => Adopter) private mapAdopters;
     mapping(address => bool) public isAdopter;
-    address[] public greatBenefactors;
+    mapping(address => uint256) public benefactors;
+    address[] public isGreatBenefactor; 
     
     
     // Events
@@ -36,9 +35,6 @@ contract DogAdoption is PetAdoptionAbstract, FundETHUSD, Ownable, ReentrancyGuar
     event Started(uint256 startedTime, string message);
     event Terminated(uint256 terminatedTime, string message);
 
-    // Errors
-    error BenefactorsException(string message);
-    
 
     /**
      * @notice The constructor of the smart contract
@@ -48,9 +44,9 @@ contract DogAdoption is PetAdoptionAbstract, FundETHUSD, Ownable, ReentrancyGuar
         address _priceFeedAddress
     )
     public
+    Ownable()
     FundETHUSD(_priceFeedAddress)
     {
-        ownerOfDogShelter = payable(msg.sender);
         statusOfAdoption = StatusAdoption.TERMINATED;
     }
     
@@ -123,7 +119,7 @@ contract DogAdoption is PetAdoptionAbstract, FundETHUSD, Ownable, ReentrancyGuar
      * @param _gender Dog's gender
      * @param _race Dog's race
      * @param _size Dog's size
-     * @dev onlyOwner and onlyAdopter can call this function
+     * @dev onlyAdopter can call this function
      * @dev Emits AddedDog event
      * @dev Default values of mapping 'dogs' are 0, so we do not accept 0 as _dog.id
      */
@@ -137,7 +133,6 @@ contract DogAdoption is PetAdoptionAbstract, FundETHUSD, Ownable, ReentrancyGuar
         )
         external
         override
-        onlyOwner 
         onlyAdopter
         inProgress
         returns (bool, address)
@@ -151,6 +146,7 @@ contract DogAdoption is PetAdoptionAbstract, FundETHUSD, Ownable, ReentrancyGuar
             _dog.name = _name;
             _dog.age = _age;
             _dog.gender = _gender;
+            _dog.race = _race;
             _dog.size = _size;
 
             dogs[_dogId] = _dog;
@@ -195,8 +191,10 @@ contract DogAdoption is PetAdoptionAbstract, FundETHUSD, Ownable, ReentrancyGuar
         {
             uint256 ethToUsd = getConversionRate(msg.value);
 
-            if (ethToUsd > 100){
-                greatBenefactors.push(msg.sender);
+            benefactors[msg.sender] += ethToUsd;
+
+            if (benefactors[msg.sender] > 100) {
+                isGreatBenefactor.push(msg.sender);
             }
 
             emit Donation(msg.sender, ethToUsd);
@@ -240,28 +238,16 @@ contract DogAdoption is PetAdoptionAbstract, FundETHUSD, Ownable, ReentrancyGuar
             return true;
         }
     
-
-    /**
-     * @notice Check if an address is valid
-     * @param _addr The desired address
-     */
-    modifier validAddress(address _addr)
-        {
-            require(_addr != address(0), "Not valid address");
-            _;
-        }
-    
     
     /**
      * @notice Change the owner of the contract
      * @param _newOwner The address of the new owner
      */
-    function changeOwner(address payable _newOwner)
-        internal 
+    function changeOwner(address _newOwner)
+        public 
         onlyOwner 
-        validAddress(_newOwner) 
         {
-            ownerOfDogShelter = _newOwner;
+            transferOwnership(_newOwner);
         }
     
     
@@ -274,8 +260,10 @@ contract DogAdoption is PetAdoptionAbstract, FundETHUSD, Ownable, ReentrancyGuar
         payable
         onlyOwner
         nonReentrant
-        {
-            ownerOfDogShelter.transfer(address(this).balance);
+        {   
+            address current_owner = owner();
+            (bool sent, ) = current_owner.call{value: address(this).balance}("");
+            require(sent, "Withdraw failed");
         }
 
 }
