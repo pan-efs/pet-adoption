@@ -1,7 +1,6 @@
 import os
 import time
 import pytest
-from web3 import Web3
 
 from brownie import (
     DogAdoption,
@@ -24,7 +23,7 @@ def deploy():
 def test_dog_adoption(deploy):
     deploying = deploy
     
-    if network.show_active() in Deploying.LOCAL:
+    if network.show_active() in deploying.LOCAL:
         pytest.skip()
     
     account = deploying.get_account()
@@ -62,10 +61,15 @@ def test_dog_adoption(deploy):
     assert DogAdoption[-1].hasBeenAdopted(6) == False
     
     # Donation
-    #DogAdoption[-1].sendDonation({"from": account, "value": 0.05, "gas_limit": 5000000000000000000})
+    DogAdoption[-1].sendDonation({"from": account, "value": 500000000000000})
     
     # Assert that the balance is > 0
-    #assert DogAdoption[-1].balance() > 0
+    assert DogAdoption[-1].balance() > 0
     
     # Get the great benefactor
-    #assert DogAdoption[-1].greatBenefactors(0) == 0
+    assert DogAdoption[-1].benefactors(adopter, {"from": account}) > 0
+    
+    # Terminate the dog adoption campaign
+    DogAdoption[-1].terminateAdoptionCampaign({"from": account})
+    # Assert that the campaign terminated
+    assert DogAdoption[-1].statusOfAdoption({"from": account}) == 0
