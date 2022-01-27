@@ -2,12 +2,7 @@ import os
 import time
 import pytest
 
-from brownie import (
-    DogAdoption,
-    config,
-    exceptions,
-    network
-)
+from brownie import DogAdoption, network
 
 from scripts.deploy_contracts_cls import Deploying
 from scripts.deploy_dog_adoption import *
