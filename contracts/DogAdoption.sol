@@ -16,7 +16,7 @@ import "./abstract/PetAdoptionAbstract.sol";
  */
 contract DogAdoption is PetAdoptionAbstract, FundETHUSD, Ownable, ReentrancyGuard {
     
-    // Global variables
+    // State variables
     StatusAdoption public statusOfAdoption;
 
     mapping(uint256 => Pet) public dogs;
