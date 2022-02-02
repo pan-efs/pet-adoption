@@ -45,6 +45,7 @@ contract DogAdoption is PetAdoptionAbstract, FundETHUSD, Ownable, ReentrancyGuar
     )
     public
     Ownable()
+    ReentrancyGuard()
     FundETHUSD(_priceFeedAddress)
     {
         statusOfAdoption = StatusAdoption.TERMINATED;
