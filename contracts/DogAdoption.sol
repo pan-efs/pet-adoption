@@ -263,7 +263,9 @@ contract DogAdoption is PetAdoptionAbstract, FundETHUSD, Ownable, ReentrancyGuar
         nonReentrant
         {   
             address current_owner = owner();
-            (bool sent, ) = current_owner.call{value: address(this).balance}("");
+            uint256 current_balance = address(this).balance;
+
+            (bool sent, ) = current_owner.call{value: current_balance}("");
             require(sent, "Withdraw failed");
         }
 
